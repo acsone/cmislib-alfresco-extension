@@ -27,7 +27,7 @@ ALFRESCO_NSPREFIX = ALFRESCO_NSALIAS + ':'
 
 LOCALNAME_ASPECTS = 'aspects'
 LOCALNAME_PROPERTIES = 'properties'
-LOCALNAME_APPLIED_ASPECTS = 'appliedAspects'
+LOCALNAME_APPLIED_ASPECTS = 'secondaryObjectTypeIds'
 LOCALNAME_SET_ASPECTS = 'setAspects'
 LOCALNAME_ASPECTS_TO_ADD = 'aspectsToAdd'
 LOCALNAME_ASPECTS_TO_REMOVE = 'aspectsToRemove'
@@ -91,10 +91,13 @@ def findAlfrescoExtensions(self):
     if self._aspects == {}:
         if self.xmlDoc == None:
             self.reload()
-        appliedAspects = self.xmlDoc.getElementsByTagNameNS(ALFRESCO_NS, LOCALNAME_APPLIED_ASPECTS)
-        for node in appliedAspects:
-            aspectType = self._repository.getTypeDefinition(node.childNodes[0].data)
-            self._aspects[node.childNodes[0].data] = aspectType
+        propertiesElements = self.xmlDoc.getElementsByTagNameNS(model.CMIS_NS, LOCALNAME_PROPERTIES)
+        for props in propertiesElements:
+            for prop in props.childNodes:
+                if prop.getAttribute('propertyDefinitionId') == "cmis:secondaryObjectTypeIds":
+                    for node in prop.childNodes: 
+                        aspectType = self._repository.getTypeDefinition(node.childNodes[0].data)
+                        self._aspects[node.childNodes[0].data] = aspectType
 
 def hasAspect(self, arg):
     result = False
@@ -206,7 +209,7 @@ def updateProperties(self, properties):
         else:
             aspect = self.findAspect(propertyName)
             if aspect is None:
-                raise InvalidArgumentException
+                raise InvalidArgumentException(propertyName)
             else:
                 alfproperties[propertyName] = propertyValue
                 alfpropsAspects[propertyName] = aspect
